@@ -49,11 +49,12 @@ Fixtures live in `tests/fixtures/` — `clean.py` and `bloated.py` are calibrate
 
 ## Current State
 
-| Metric     | Status      |
-| ---------- | ----------- |
-| verbosity  | Complete    |
-| structure  | In progress |
-| complexity | In progress |
-| naming     | Not started |
-| scorer     | Not started |
-| CLI        | Stub only   |
+| Metric     | Status    |
+| ---------- | --------- |
+| verbosity  | Complete  |
+| structure  | Complete  |
+| complexity | Complete  |
+| naming     | Complete  |
+| scorer     | Complete  |
+| baseline   | Complete  |
+| CLI        | Stub only |
