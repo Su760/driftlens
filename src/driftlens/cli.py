@@ -1,3 +1,4 @@
+import json
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -208,6 +209,80 @@ def score(path: str, files: tuple, threshold: int) -> None:
         console.print(
             f"[green]✓[/green] Score {overall:.1f} is within threshold {threshold}"
         )
+
+
+@cli.command()
+@click.option("--path", default=".", show_default=True, help="Project root to scan.")
+@click.option("--threshold", default=40, show_default=True, help="Exit code 1 if score exceeds this.")
+@click.option("--format", "output_format", default="text", type=click.Choice(["text", "json"]), show_default=True, help="Output format.")
+def ci(path: str, threshold: int, output_format: str) -> None:
+    """CI-friendly drift check: plain text output, exits 1 if threshold exceeded."""
+    project_dir = Path(path).resolve()
+    baseline_path = project_dir / BASELINE_FILE
+
+    if not baseline_path.exists():
+        print(f"ERROR: No baseline found at {baseline_path}. Run 'driftlens init' first.")
+        sys.exit(1)
+
+    baseline = load_baseline(str(baseline_path))
+    target_files = sorted(project_dir.rglob("*.py"))
+
+    results = []
+    for filepath in target_files:
+        rel = str(filepath.relative_to(project_dir))
+        if rel not in baseline:
+            continue
+        result = _score_file(baseline[rel], str(filepath))
+        result["filepath"] = rel
+        results.append(result)
+
+    if not results:
+        print("No files matched the baseline. Nothing to score.")
+        sys.exit(0)
+
+    overall = sum(r["composite_score"] for r in results) / len(results)
+    passed = overall <= threshold
+
+    if output_format == "json":
+        output = {
+            "overall_score": round(overall, 2),
+            "threshold": threshold,
+            "passed": passed,
+            "severity": _severity(overall),
+            "files": [
+                {
+                    "filepath": r["filepath"],
+                    "composite_score": round(r["composite_score"], 2),
+                    "verbosity_delta": round(r["verbosity_delta"], 4),
+                    "structural_distance": round(r["structural_distance"], 4),
+                    "complexity_gini_delta": round(r["complexity_gini_delta"], 4),
+                    "naming_violation_rate": round(r["naming_violation_rate"], 4),
+                }
+                for r in results
+            ],
+        }
+        print(json.dumps(output, indent=2))
+    else:
+        for r in results:
+            print(f"{r['filepath']}: {r['composite_score']:.1f}")
+        print(f"overall: {overall:.1f} / 100  [{_severity(overall)}]")
+        status = "PASS" if passed else "FAIL"
+        print(f"threshold: {threshold}  result: {status}")
+
+    # Post PR comment when running in GitHub Actions
+    if _in_github_actions():
+        try:
+            from driftlens.github import post_pr_comment
+            post_pr_comment(results, overall, threshold, passed)
+        except Exception:
+            pass  # Never let comment posting break the CI step
+
+    sys.exit(0 if passed else 1)
+
+
+def _in_github_actions() -> bool:
+    import os
+    return os.environ.get("GITHUB_ACTIONS") == "true"
 
 
 @cli.command()

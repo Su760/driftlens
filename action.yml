@@ -1,0 +1,21 @@
+name: "DriftLens"
+description: "Monitor code quality drift from AI coding agents"
+inputs:
+  threshold:
+    description: "Drift score threshold (0-100)"
+    required: false
+    default: "40"
+  python-version:
+    description: "Python version"
+    required: false
+    default: "3.11"
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+    - shell: bash
+      run: pip install driftlens
+    - shell: bash
+      run: driftlens ci --threshold ${{ inputs.threshold }}
