@@ -78,6 +78,85 @@ def test_single_line_function():
         os.unlink(tmpfile)
 
 
+def test_bloated_demo_file():
+    """Bloated code with pointless intermediates must score >= 1.5x clean."""
+    clean_code = """\
+def add(a, b):
+    return a + b
+
+def multiply(a, b):
+    return a * b
+
+def factorial(n):
+    if n <= 1:
+        return 1
+    result = 1
+    for i in range(2, n + 1):
+        result *= i
+    return result
+"""
+    bloated_code = """\
+def add(a, b):
+    first_number = a
+    second_number = b
+    result = first_number + second_number
+    return result
+
+def multiply(a, b):
+    first_operand = a
+    second_operand = b
+    product = first_operand * second_operand
+    return product
+
+def factorial(n):
+    if n <= 1:
+        base_case_result = 1
+        return base_case_result
+    result = 1
+    start_value = 2
+    end_value = n + 1
+    for i in range(start_value, end_value):
+        result = result * i
+    return result
+"""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+        f.write(clean_code)
+        clean_file = f.name
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+        f.write(bloated_code)
+        bloated_file = f.name
+    try:
+        clean_score = compute_verbosity(clean_file)
+        bloated_score = compute_verbosity(bloated_file)
+        assert bloated_score >= 1.5 * clean_score, (
+            f"Expected bloated ({bloated_score:.2f}) >= 1.5 * clean ({clean_score:.2f})"
+        )
+    finally:
+        os.unlink(clean_file)
+        os.unlink(bloated_file)
+
+
+def test_density_signal():
+    """A function with redundant intermediates should have higher verbosity."""
+    concise = "def add(a, b):\n    return a + b\n"
+    verbose = "def add(a, b):\n    x = a\n    y = b\n    result = x + y\n    return result\n"
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+        f.write(concise)
+        concise_file = f.name
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+        f.write(verbose)
+        verbose_file = f.name
+    try:
+        concise_score = compute_verbosity(concise_file)
+        verbose_score = compute_verbosity(verbose_file)
+        assert verbose_score > concise_score, (
+            f"Expected verbose ({verbose_score:.2f}) > concise ({concise_score:.2f})"
+        )
+    finally:
+        os.unlink(concise_file)
+        os.unlink(verbose_file)
+
+
 def test_class_methods():
     code = """\
 class Calculator:

@@ -11,6 +11,7 @@ class FunctionVerbosity:
     source_lines: int
     functional_units: int
     verbosity_ratio: float
+    density: float  # functional_units per function — catches redundant operations
 
 
 def _count_functional_units(node: ast.FunctionDef | ast.AsyncFunctionDef) -> int:
@@ -50,6 +51,7 @@ def analyze_verbosity(filepath: str) -> list[FunctionVerbosity]:
                 source_lines=src_lines,
                 functional_units=func_units,
                 verbosity_ratio=ratio,
+                density=float(func_units),
             ))
     return results
 
@@ -63,7 +65,9 @@ def compute_verbosity(filepath: str) -> float:
     results = analyze_verbosity(filepath)
     if not results:
         return 0.0
-    return sum(r.verbosity_ratio for r in results) / len(results)
+    avg_ratio = sum(r.verbosity_ratio for r in results) / len(results)
+    avg_density = sum(r.density for r in results) / len(results)
+    return (avg_ratio * 0.5) + (avg_density * 0.5)
 
 
 def compare_verbosity(baseline_ratio: float, current_ratio: float) -> float:
