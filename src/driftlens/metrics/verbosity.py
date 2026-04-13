@@ -35,7 +35,7 @@ def _count_functional_units(node: ast.FunctionDef | ast.AsyncFunctionDef) -> int
 
 def analyze_verbosity(filepath: str) -> list[FunctionVerbosity]:
     """Return per-function verbosity stats for every function/method in the file."""
-    source = Path(filepath).read_text()
+    source = Path(filepath).read_text(encoding='utf-8', errors='ignore')
     tree = ast.parse(source)
 
     results: list[FunctionVerbosity] = []

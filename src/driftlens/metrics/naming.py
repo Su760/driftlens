@@ -57,7 +57,7 @@ def _extract_identifiers(tree: ast.AST) -> list[str]:
 
 def analyze_naming(filepath: str) -> NamingProfile:
     """Return a naming convention profile for all identifiers in the file."""
-    source = Path(filepath).read_text()
+    source = Path(filepath).read_text(encoding='utf-8', errors='ignore')
     tree = ast.parse(source)
     identifiers = _extract_identifiers(tree)
 

@@ -43,7 +43,7 @@ def compute_gini(values: list[float]) -> float:
 
 def analyze_complexity(filepath: str) -> list[FunctionComplexity]:
     """Return per-function cyclomatic complexity for every function/method."""
-    source = Path(filepath).read_text()
+    source = Path(filepath).read_text(encoding='utf-8', errors='ignore')
     results = cc_visit(source)
     return [
         FunctionComplexity(

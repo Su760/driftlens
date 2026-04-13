@@ -22,7 +22,7 @@ def compute_fingerprint(filepath: str) -> Fingerprint:
     Example: {("FunctionDef", 1): 3, ("If", 2): 5, ("For", 3): 2}
     Depth 0 is the Module node itself.
     """
-    source = Path(filepath).read_text()
+    source = Path(filepath).read_text(encoding='utf-8', errors='ignore')
     if not source.strip():
         return {}
     tree = ast.parse(source)
